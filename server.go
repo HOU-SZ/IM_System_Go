@@ -76,15 +76,9 @@ func (this *Server) ListenMessage() {
 func (this *Server) Handler(conn net.Conn) {
 	fmt.Println("Connection create success.")
 
-	user := NewUser(conn)
+	user := NewUser(conn, this)
 
-	// Add the user to the OnlineMap
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-
-	// Broadcast the user online message to Message Channel
-	this.Broadcast(user, "online")
+	user.Online()
 
 	// Recieve the messages sent by user and broadcast to all users
 	go func() {
@@ -92,7 +86,7 @@ func (this *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buffer)
 			if n == 0 {
-				this.Broadcast(user, "offline")
+				user.Offline()
 				return
 			}
 
@@ -103,7 +97,7 @@ func (this *Server) Handler(conn net.Conn) {
 
 			msg := string(buffer[:n-1])
 
-			this.Broadcast(user, msg)
+			user.DoMessage(msg)
 		}
 	}()
 
