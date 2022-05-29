@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 type User struct {
 	Name string
@@ -60,12 +63,29 @@ func (this *User) Offline() {
 
 func (this *User) DoMessage(msg string) {
 	if msg == "who" {
+		// Query online users
 		this.server.mapLock.Lock()
 		for _, user := range this.server.OnlineMap {
 			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "is online\n"
 			this.sendMsg(onlineMsg)
 		}
 		this.server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		// Change user name
+		newName := strings.Split(msg, "|")[1]
+		// Check if the new name exist already
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.sendMsg("The new user name has already exist.\n")
+		} else {
+			this.server.mapLock.Lock()
+			delete(this.server.OnlineMap, this.Name)
+			this.Name = newName
+			this.server.OnlineMap[this.Name] = this
+			this.server.mapLock.Unlock()
+
+			this.sendMsg("Your user name has updated as: " + this.Name + "\n")
+		}
 	} else {
 		this.server.Broadcast(this, msg)
 	}
