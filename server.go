@@ -3,18 +3,28 @@ package main
 import (
 	"fmt"
 	"net"
+	"sync"
 )
 
 type Server struct {
 	Ip   string
 	Port int
+
+	// A map to store current online users
+	OnlineMap map[string]*User
+	mapLock   sync.RWMutex
+
+	// A channel to broadcast messages
+	Message chan string
 }
 
 // Create a new server
 func NewServer(ip string, port int) *Server {
 	server := &Server{
-		Ip:   ip,
-		Port: port,
+		Ip:        ip,
+		Port:      port,
+		OnlineMap: make(map[string]*User),
+		Message:   make(chan string),
 	}
 	return server
 }
@@ -32,6 +42,9 @@ func (this *Server) Start() {
 	// Finally close listener
 	defer listener.Close()
 
+	// When starting, start the goroutine to monitor Message channel
+	go this.ListenMessage()
+
 	// Monitor connections
 	for {
 		// Accept connection
@@ -46,6 +59,39 @@ func (this *Server) Start() {
 	}
 }
 
+// Func to monitor current Message channel, once there are any messages in the Channel, send it to all online users
+func (this *Server) ListenMessage() {
+	for {
+		msg := <-this.Message
+
+		this.mapLock.Lock()
+		for _, cli := range this.OnlineMap {
+			cli.C <- msg
+		}
+		this.mapLock.Unlock()
+	}
+}
+
 func (this *Server) Handler(conn net.Conn) {
 	fmt.Println("Connection create success.")
+
+	user := NewUser(conn)
+
+	// Add the user to the OnlineMap
+	this.mapLock.Lock()
+	this.OnlineMap[user.Name] = user
+	this.mapLock.Unlock()
+
+	// Broadcast the user online message to Message Channel
+	this.Broadcast(user, "online")
+
+	// Keep current goroutine alive
+	select {}
+}
+
+// Func to broadcast the user online message to Message Channel
+func (this *Server) Broadcast(user *User, msg string) {
+	sendMessage := "[" + user.Addr + "]" + user.Name + ":" + msg
+
+	this.Message <- sendMessage
 }
