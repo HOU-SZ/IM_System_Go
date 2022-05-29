@@ -89,14 +89,12 @@ func (this *Server) Handler(conn net.Conn) {
 				user.Offline()
 				return
 			}
-
 			if err != nil && err != io.EOF {
 				fmt.Println("Conn read err: ", err)
 				return
 			}
 
 			msg := string(buffer[:n-1])
-
 			user.DoMessage(msg)
 		}
 	}()
