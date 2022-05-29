@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -84,6 +85,27 @@ func (this *Server) Handler(conn net.Conn) {
 
 	// Broadcast the user online message to Message Channel
 	this.Broadcast(user, "online")
+
+	// Recieve the messages sent by user and broadcast to all users
+	go func() {
+		buffer := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buffer)
+			if n == 0 {
+				this.Broadcast(user, "offline")
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn read err: ", err)
+				return
+			}
+
+			msg := string(buffer[:n-1])
+
+			this.Broadcast(user, msg)
+		}
+	}()
 
 	// Keep current goroutine alive
 	select {}
