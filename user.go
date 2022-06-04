@@ -65,7 +65,7 @@ func (this *User) DoMessage(msg string) {
 		// Query online users
 		this.server.mapLock.Lock()
 		for _, user := range this.server.OnlineMap {
-			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "is online\n"
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ": " + "is online\n"
 			this.sendMsg(onlineMsg)
 		}
 		this.server.mapLock.Unlock()

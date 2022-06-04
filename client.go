@@ -73,6 +73,48 @@ func (client *Client) PublicMessage() {
 	}
 }
 
+func (client *Client) QueryOnlineUsers() {
+	sendMsg := "who\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn.Write error: ", err)
+		return
+	}
+}
+
+func (client *Client) PrivateMessage() {
+	var remoteName string
+	var chatMsg string
+
+	client.QueryOnlineUsers()
+	fmt.Println(">>>>Please input user name, or exit by input \"exit\".")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		fmt.Println(">>>>Please input message, or exit by input \"exit\".")
+		fmt.Scanln(&chatMsg)
+
+		for chatMsg != "exit" {
+			if len(chatMsg) != 0 {
+				sendMsg := "to|" + remoteName + "|" + chatMsg + "\n\n"
+				_, err := client.conn.Write([]byte(sendMsg))
+				if err != nil {
+					fmt.Println("conn.Write error: ", err)
+					break
+				}
+			}
+
+			chatMsg = ""
+			fmt.Println(">>>>Please input message, or exit by input \"exit\".")
+			fmt.Scanln(&chatMsg)
+		}
+
+		client.QueryOnlineUsers()
+		fmt.Println(">>>>Please input user name, or exit by input \"exit\".")
+		fmt.Scanln(&remoteName)
+	}
+}
+
 func (client *Client) DealResponse() {
 	// Once the are some message in client.conn, copy it to stdout, block and listen forever
 	io.Copy(os.Stdout, client.conn)
@@ -115,7 +157,7 @@ func (client *Client) Run() {
 			client.PublicMessage()
 			break
 		case 2:
-			fmt.Println("Choose: Send private message")
+			client.PrivateMessage()
 			break
 		case 3:
 			client.UpdateName()
