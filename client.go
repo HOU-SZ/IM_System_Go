@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -34,6 +36,30 @@ func NewClient(serverIp string, serverPort int) *Client {
 
 	client.conn = conn
 	return client
+}
+
+func (client *Client) UpdateName() bool {
+	fmt.Println(">>>>>Please input your name:")
+	fmt.Scanln(&client.Name)
+
+	sendMsg := "rename|" + client.Name + "\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn.Write error: ", err)
+		return false
+	}
+
+	return true
+}
+
+func (client *Client) DealResponse() {
+	// Once the are some message in client.conn, copy it to stdout, block and listen forever
+	io.Copy(os.Stdout, client.conn)
+
+	// Equivalent to the following code
+	// buffer := make([]byte, 4096)
+	// client.conn.Read(buffer)
+	// fmt.Println(buffer)
 }
 
 func (client *Client) menu() bool {
@@ -71,7 +97,7 @@ func (client *Client) Run() {
 			fmt.Println("Choose: Send private message")
 			break
 		case 3:
-			fmt.Println("Choose: Update user name")
+			client.UpdateName()
 			break
 		}
 	}
@@ -89,6 +115,9 @@ func main() {
 		fmt.Println("Connect to server failed...")
 		return
 	}
+
+	// Create a goroutine to process the message from server
+	go client.DealResponse()
 
 	fmt.Println("Connect to server success...")
 
