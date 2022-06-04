@@ -116,7 +116,7 @@ func (this *Server) Handler(conn net.Conn) {
 		case <-isLive:
 			// The user is alive, should reset timer
 			// Do nothing, to activate the select, update the timer
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 300):
 			// Timeout, should force close the user
 			user.sendMsg("You are timeout!")
 			// isLive <- false

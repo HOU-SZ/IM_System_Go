@@ -87,6 +87,31 @@ func (this *User) DoMessage(msg string) {
 			this.sendMsg("Your user name has updated as: " + this.Name + "\n")
 		}
 
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// Private Message
+		if len(strings.Split(msg, "|")) != 3 {
+			this.sendMsg("The message format is not correct, please use the foramt like: \"to|shizheng|I love you\" .\n")
+			return
+		}
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			this.sendMsg("The user name cannot be empty.\n")
+			return
+		}
+
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		if !ok {
+			this.sendMsg("The user dosn't exist.\n")
+			return
+		}
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			this.sendMsg("The message cannot be empty.\n")
+			return
+		}
+
+		remoteUser.sendMsg(this.Name + " to you: " + content + "\n")
+
 	} else {
 		this.server.Broadcast(this, msg)
 	}
