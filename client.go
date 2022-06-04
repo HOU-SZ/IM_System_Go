@@ -11,6 +11,7 @@ type Client struct {
 	ServerPort int
 	Name       string
 	conn       net.Conn
+	flag       int
 }
 
 var serverIp string
@@ -21,6 +22,7 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client := &Client{
 		ServerIp:   serverIp,
 		ServerPort: serverPort,
+		flag:       999,
 	}
 
 	// Connect to the server
@@ -32,6 +34,47 @@ func NewClient(serverIp string, serverPort int) *Client {
 
 	client.conn = conn
 	return client
+}
+
+func (client *Client) menu() bool {
+	var flag int
+
+	fmt.Println("1. Send public message")
+	fmt.Println("2. Send private message")
+	fmt.Println("3. Update user name")
+	fmt.Println("0. Exit")
+
+	fmt.Scanln(&flag)
+
+	if flag >= 0 && flag <= 3 {
+		client.flag = flag
+		return true
+	} else {
+		fmt.Println(">>>>>Please input a valid number<<<<<")
+		return false
+	}
+}
+
+func (client *Client) Run() {
+	// If the flag number != 0, go into the loop, else exit
+	for client.flag != 0 {
+		// Loop until recieve a valid flag number
+		for client.menu() != true {
+			continue
+		}
+
+		switch client.flag {
+		case 1:
+			fmt.Println("Choose: Send public message")
+			break
+		case 2:
+			fmt.Println("Choose: Send private message")
+			break
+		case 3:
+			fmt.Println("Choose: Update user name")
+			break
+		}
+	}
 }
 
 func init() {
@@ -50,5 +93,5 @@ func main() {
 	fmt.Println("Connect to server success...")
 
 	// todo
-	select {}
+	client.Run()
 }
