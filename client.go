@@ -52,6 +52,27 @@ func (client *Client) UpdateName() bool {
 	return true
 }
 
+func (client *Client) PublicMessage() {
+	var chatMsg string
+
+	fmt.Println(">>>>Please input message, or exit by input \"exit\".")
+	fmt.Scanln(&chatMsg)
+
+	for chatMsg != "exit" {
+		if len(chatMsg) != 0 {
+			_, err := client.conn.Write([]byte(chatMsg + "\n"))
+			if err != nil {
+				fmt.Println("conn.Write error: ", err)
+				break
+			}
+		}
+
+		chatMsg = ""
+		fmt.Println(">>>>Please input message, or exit by input \"exit\".")
+		fmt.Scanln(&chatMsg)
+	}
+}
+
 func (client *Client) DealResponse() {
 	// Once the are some message in client.conn, copy it to stdout, block and listen forever
 	io.Copy(os.Stdout, client.conn)
@@ -91,7 +112,7 @@ func (client *Client) Run() {
 
 		switch client.flag {
 		case 1:
-			fmt.Println("Choose: Send public message")
+			client.PublicMessage()
 			break
 		case 2:
 			fmt.Println("Choose: Send private message")
