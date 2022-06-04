@@ -36,7 +36,6 @@ func NewUser(conn net.Conn, server *Server) *User {
 func (this *User) ListenMessage() {
 	for {
 		msg := <-this.C
-
 		this.conn.Write([]byte(msg + "\n"))
 	}
 }
@@ -70,6 +69,7 @@ func (this *User) DoMessage(msg string) {
 			this.sendMsg(onlineMsg)
 		}
 		this.server.mapLock.Unlock()
+
 	} else if len(msg) > 7 && msg[:7] == "rename|" {
 		// Change user name
 		newName := strings.Split(msg, "|")[1]
@@ -86,6 +86,7 @@ func (this *User) DoMessage(msg string) {
 
 			this.sendMsg("Your user name has updated as: " + this.Name + "\n")
 		}
+
 	} else {
 		this.server.Broadcast(this, msg)
 	}

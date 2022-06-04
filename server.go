@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -78,7 +79,11 @@ func (this *Server) Handler(conn net.Conn) {
 
 	user := NewUser(conn, this)
 
+	// Broadcast user online message
 	user.Online()
+
+	// A channel to monitor whether the user is alive
+	isLive := make(chan bool)
 
 	// Recieve the messages sent by user and broadcast to all users
 	go func() {
@@ -94,13 +99,34 @@ func (this *Server) Handler(conn net.Conn) {
 				return
 			}
 
+			// Extract the message from user (remove "\n")
 			msg := string(buffer[:n-1])
+
+			// Broadcast the message
 			user.DoMessage(msg)
+
+			// Any message sent by user means the user is alive
+			isLive <- true
 		}
 	}()
 
 	// Keep current goroutine alive
-	select {}
+	for {
+		select {
+		case <-isLive:
+			// The user is alive, should reset timer
+			// Do nothing, to activate the select, update the timer
+		case <-time.After(time.Second * 10):
+			// Timeout, should force close the user
+			user.sendMsg("You are timeout!")
+			// isLive <- false
+			close(user.C)
+			// user.Offline()
+			conn.Close()
+			return
+		}
+	}
+
 }
 
 // Func to broadcast the user online message to Message Channel
